@@ -15,13 +15,13 @@ async function deposit(
   zkApp: Escrow,
   actor_sk: PrivateKey
 ) {
-    const actor_pk: PublicKey = actor_sk.toPublicKey();
-    const tx = await Mina.transaction(actor_pk, () => {
-      zkApp.deposit(actor_pk);
-    });
-    await tx.prove();
-    await tx.sign([actor_sk]);
-    await tx.send();
+  const actor_pk: PublicKey = actor_sk.toPublicKey();
+  const tx = await Mina.transaction(actor_pk, () => {
+    zkApp.deposit(actor_pk);
+  });
+  await tx.prove();
+  await tx.sign([actor_sk]);
+  await tx.send();
 }
 
 describe('Escrow', () => {
