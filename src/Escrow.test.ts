@@ -24,6 +24,19 @@ async function deposit(
   await tx.send();
 }
 
+async function withdraw(
+    zkApp: Escrow,
+    actor_sk: PrivateKey
+) {
+    const actor_pk: PublicKey = actor_sk.toPublicKey();
+    const tx = await Mina.transaction(actor_pk, () => {
+        zkApp.withdraw(actor_pk);
+    });
+    await tx.prove();
+    await tx.sign([actor_sk]);
+    await tx.send();
+}
+
 describe('Escrow', () => {
   let
     deployerAccount: PublicKey,
@@ -79,33 +92,78 @@ describe('Escrow', () => {
     const amount = 1000000;
 
     // deploy the contract
-    await localDeploy()
+    await localDeploy();
 
     // Alice should have initial balance
     Mina.getBalance(aliceAccount).assertEquals(
-      UInt64.from(balance_initial))
+      UInt64.from(balance_initial));
 
     // Bob should have initial balance
     Mina.getBalance(bobAccount).assertEquals(
-      UInt64.from(balance_initial))
+      UInt64.from(balance_initial));
 
     // zkApp should have zero balance
     Mina.getBalance(zkAppAddress).assertEquals(
-      UInt64.from(0))
+      UInt64.from(0));
 
     // Alice deposits
-    await deposit(zkApp, aliceKey)
+    await deposit(zkApp, aliceKey);
 
     // Alice should have initial balance - amount
     Mina.getBalance(aliceAccount).assertEquals(
-      UInt64.from(balance_initial - amount))
+      UInt64.from(balance_initial - amount));
 
     // Bob should still have initial balance
     Mina.getBalance(bobAccount).assertEquals(
-      UInt64.from(balance_initial))
+      UInt64.from(balance_initial));
 
     // zkApp should have amount as balance
     Mina.getBalance(zkAppAddress).assertEquals(
-      UInt64.from(amount))
+      UInt64.from(amount));
+
+    // Bob deposits
+    await deposit(zkApp, bobKey);
+
+    // Alice should have initial balance - amount
+    Mina.getBalance(aliceAccount).assertEquals(
+      UInt64.from(balance_initial - amount));
+
+    // Bob should have initial balance - amount
+    Mina.getBalance(bobAccount).assertEquals(
+      UInt64.from(balance_initial - amount));
+
+    // zkApp should have twice amount as balance
+    Mina.getBalance(zkAppAddress).assertEquals(
+      UInt64.from(2*amount));
+
+    // Alice withdraws
+    await withdraw(zkApp, aliceKey);
+
+    // Alice should have initial balance
+    Mina.getBalance(aliceAccount).assertEquals(
+      UInt64.from(balance_initial));
+
+    // Bob should have initial balance - amount
+    Mina.getBalance(bobAccount).assertEquals(
+      UInt64.from(balance_initial - amount));
+
+    // zkApp should have twice amount as balance
+    Mina.getBalance(zkAppAddress).assertEquals(
+      UInt64.from(amount));
+
+    // Bob withdraws
+    await withdraw(zkApp, bobKey);
+
+    // Alice should have initial balance
+    Mina.getBalance(aliceAccount).assertEquals(
+      UInt64.from(balance_initial));
+
+    // Bob should have initial balance
+    Mina.getBalance(bobAccount).assertEquals(
+      UInt64.from(balance_initial));
+
+    // zkApp should have no balance
+    Mina.getBalance(zkAppAddress).assertEquals(
+      UInt64.from(0));
   });
 });
