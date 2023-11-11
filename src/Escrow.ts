@@ -4,9 +4,19 @@ import {
   UInt64,
   AccountUpdate,
   PublicKey,
+  Permissions
 } from 'o1js';
 
 export class Escrow extends SmartContract {
+  deploy() {
+    super.deploy();
+    this.setPermissions({
+      ...Permissions.default(),
+      editState: Permissions.proof(),
+      send: Permissions.proof(),
+    });
+  }
+
   @method deposit(user: PublicKey) {
     // add your deposit logic circuit here
     // that will adjust the amount
